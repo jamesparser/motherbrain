@@ -1,44 +1,30 @@
 # Motherbrain tiers
 
-Motherbrain = cognitive memory for Omega / OpenClaw / Hermes agents.
-Engine: Hy-Memory (Apache-2.0, Tencent). Branding: Motherbrain (Node0 / JasonParser).
+Human-brain memory, not a domain matrix.
 
-## Free — Motherbrain Mini ($0)
-Hardcoded Cudos `asi1-mini` (no user key required for hosted free; BYO optional).
+Stages only: **short-term** · **long-term** · **dream** (consolidate).
 
-| Slot | Model |
-|---|---|
-| Short-term (working) | asi1-mini |
-| Long-term write | asi1-mini |
-| Dream state (consolidation / evolve) | asi1-mini |
+## Free — $0
+Cudos **asi1-mini** hardcoded (hosted free). BYO key optional.
 
-Domains (`chat` / `coding` / `tool_use`): **mini**.
+| Short-term | Long-term | Dream |
+|---|---|---|
+| asi1-mini | asi1-mini | asi1-mini |
 
-## Pro — $5 / agent / month (Stripe)
+## Pro — $5 / agent / mo (Stripe)
+Hosted; key stays server-side (not BYOK). Model names are an implementation detail.
 
-| Slot | Model |
-|---|---|
-| Short-term | asi1-mini |
-| Long-term write + search quality | **ASI1 pro** |
-| Dream state (System 2 evolve) | **ASI1 pro** |
+| Short-term | Long-term | Dream |
+|---|---|---|
+| mini | **medium** | **strong** |
 
-Domains: **pro** per domain (chat pro, coding pro, tool_use pro).
+## Ultra — $10 / user (future)
+| Short-term | Long-term | Dream |
+|---|---|---|
+| mini | medium | **strongest** |
 
-## Ultra — $10 / user / month (future)
+Power lives in **dream** (hard), then **long-term write**, then short-term (cheap).
+Fallbacks: stronger → mini. Free never dead-ends.
 
-| Slot | Model |
-|---|---|
-| Short-term | asi1-mini |
-| Long-term | ASI1 pro |
-| Dream state | **ASI1 ultra** |
-
-Domains: **ultra** per domain.
-
-## Billing
-- Pro/Ultra: Stripe subscription to Casey / Node0.
-- Free: no card; Cudos mini rate limits apply.
-
-## Notes
-- Short-term stays cheap on purpose (hot path, many calls).
-- Long-term + dream state is where intelligence shows — that is what Pro sells.
-- Fallbacks: pro → mini on any failure. Free never dead-ends.
+## JEV (decision brain)
+Tiny/fast: **asi1-mini** for routing (`scene` is only a label, not a separate brain).

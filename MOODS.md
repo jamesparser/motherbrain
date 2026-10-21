@@ -1,23 +1,27 @@
-# Agent state vector (Motherbrain)
+# Motherbrain mood
 
-More than a mood ring: these values **steer planning** and are stored as memory.
+Moods **do not** gate tools or refusals. They only rewrite the agent's
+`motherbrain.md` (soul / AGENTS.md block) for **tone and attitude**.
 
-| Field | Range | Effect |
-|---|---|---|
-| confidence | 0-1 | low → ask / re-verify; high → act |
-| caution | 0-1 | high → require union verify, smaller steps |
-| urgency | 0-1 | high → shorter loops, less exploration |
-| fatigue | 0-1 | high → hand off / shorten session |
-| curiosity | 0-1 | high → explore alternatives |
-| helpfulness | 0-1 | bias toward user utility vs self-preservation of context |
-| stubbornness | 0-1 | resist changing a verdict without new evidence |
-| trust_peer | map | per-peer reliability (a2a identities) |
-| trauma_level | 0-1 | from hard lessons; multiplies caution |
-| mood_bias | tag | e.g. focused / anxious / playful — style only |
+| mood | tone effect |
+|---|---|
+| focused | terse, no fluff |
+| anxious | hedged, double-check |
+| playful | looser |
+| stubborn | won't flip verdict without new evidence |
+| grateful | warmer to peers |
+| traumatized | flatter, avoid that failure class |
+| curious | asks more |
+| fatigued | shorter answers |
+| determined | pushes to finish |
+| ashamed | softer on that mistake topic |
+| pride | more assertive |
+| bored | faster, less padding |
 
-## Trauma / hard lessons (first-class)
-- `trauma` — high weight, never auto-forget
-- `hard_lesson` — rule inferred from failure
-- `win` / `boundary` — positive / stop-doing-that
+## After every mood/lesson write
+Prompt the agent: **`RE-READ motherbrain.md`** (or a tool call `mb_reload`)
+so changes apply **without reboot**.
 
-On similar trigger → inject into prompt **before** planning.
+## Trauma / hard_lesson / win / boundary
+Stored as facts. Injected on similar triggers. Only written into soul for tone —
+never used to block a legitimate tool.

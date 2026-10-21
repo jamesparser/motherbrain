@@ -9,6 +9,9 @@ Free tier runs on ASI1-mini (Cudos). Pro / Ultra upgrade to ASI1 pro / ultra.
 
 See [TIERS.md](TIERS.md) and [MOODS.md](MOODS.md).
 
+Memory stages: short-term · long-term · dream. Moods = tone in `motherbrain.md` only.
+After each mood/lesson write the agent is told to **re-read** `motherbrain.md` (no reboot).
+
 > Fork of [Tencent-Hunyuan/Hy-Memory](https://github.com/Tencent-Hunyuan/Hy-Memory) (Apache-2.0).
 > Product: Motherbrain · Node0 Data Systems / JasonParser Security.
 
