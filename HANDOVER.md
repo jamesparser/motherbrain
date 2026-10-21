@@ -17,9 +17,24 @@ Fork of **Tencent Hy-Memory** (Apache-2.0). Brand: red “Mother Brain” art
 
 Not a new LLM. A **memory runtime** + **skills/MCP** + **dashboard** + **Stripe tiers**.
 
+### Shared brain (owner lock 2026-10-21)
+**Multiple agents attach to one Motherbrain and share the same brain.**
+
+- One brain (one memory store / soul / lesson set). Many agents.
+- Agents are **members** of the brain: Omega, OpenClaw, Hermes, Claude, etc.
+- Writes are attributed (`agent_id` / role), but recall is **shared**. One agent's
+  lesson is every agent's lesson. One agent's trauma is every agent's caution.
+- Short-term can be **per-agent thread** (who is talking now) while long-term and
+  dream are **shared** across the brain.
+- Adding an agent is first-class: register member, give it MCP tools, it reads and
+  writes the same soul. No second brain, no fork per agent.
+- Do **not** ship one-isolated-memory-per-agent as the product model. Shared is
+  the point.
+
 ### Positioning (for Ben / SNET / ASI crowd)
 > Persistent mind for Omega agents: short-term memory, long-term identity, hard
 > lessons, dream-state consolidation. It thinks more like a human than a chat log.
+> Multiple agents share one brain, so the fleet gets wiser together.
 
 Do **not** claim magic consciousness scores (no “13.32x Φ”). Sell **cognitive
 architecture** backed by Hy-Memory’s dual-process design + papers.
@@ -95,12 +110,19 @@ After every mood/lesson/evolve write:
 **MCP server first**, same Python core as the library.
 
 Tools (ship free with product):
-- `mb_write` — write memory (text / messages / tool trace)
-- `mb_search` — recall (profile / normal / proactive)
-- `mb_lesson` — record trauma / hard_lesson / win / boundary
-- `mb_state` — mood/state read + update (tone only)
+- `mb_write` — write memory (text / messages / tool trace). Tagged with `agent_id`.
+- `mb_search` — recall (profile / normal / proactive) across the **shared** brain
+- `mb_lesson` — record trauma / hard_lesson / win / boundary (shared)
+- `mb_state` — mood/state read + update (tone only; brain-level, not tool-block)
 - `mb_evolve` — dream state (Pro/Ultra; no-op or mini on Free)
 - `mb_jev` — mini JSON decisions (optional separate)
+- `mb_join` — attach an agent to the brain (register member, get tools)
+- `mb_members` — list agents on this brain
+
+Shared-brain rules:
+- Long-term + dream + soul + lessons are **one copy** for all members.
+- Short-term is scoped to the calling agent / thread unless the caller asks `shared=true`.
+- `mb_search` returns memories written by other agents by default. That is the product.
 
 Then thin wrappers:
 1. **Omega / OpenClaw plugin** (Hy-Memory already has `plugins/openclaw` pattern)
@@ -196,10 +218,15 @@ hackathon, not a rewrite of a2a-omega.
 1. `motherbrain/router.py` — stage → model (free/pro/ultra tables above)
 2. `motherbrain/jev.py` — asi1-mini JSON classifier + cache
 3. `motherbrain/soul.py` — write `motherbrain.md` + `mb_reload` / re-read hook
-4. `motherbrain/mcp/server.py` — mb_* tools
-5. `motherbrain/refusal.py` — detect + log + payload for dashboard
-6. Vercel app: dashboard + Stripe Pro + Venice CTA
-7. Omega/OpenClaw plugin + Hermes skill (thin)
+4. `motherbrain/members.py` — multi-agent shared brain (join / attribution / shared recall)
+5. `motherbrain/mcp/server.py` — mb_* tools including `mb_join` / `mb_members`
+6. `motherbrain/refusal.py` — detect + log + payload for dashboard
+7. Vercel app: dashboard + Stripe Pro + Venice CTA
+8. Omega/OpenClaw plugin + Hermes skill (thin)
+
+**Build order for the next agent:**
+router + JEV + soul write/re-read + **shared multi-agent brain** + MCP + Vercel dashboard with art +
+Stripe Pro + Venice CTA. Ship Free first.
 
 ---
 
@@ -219,6 +246,7 @@ hackathon, not a rewrite of a2a-omega.
 > **Motherbrain** — persistent cognitive memory for Omega agents.
 > Free on a fast mini brain, deeper on Pro. Short-term, long-term, and dreams —
 > so your agents get wiser instead of starting from zero every session.
+> Add more agents to the same brain. They share what they learn.
 
 Logo: `assets/motherbrain.png` · Demo goal: agent fails → lesson → doesn’t fail again.
 
