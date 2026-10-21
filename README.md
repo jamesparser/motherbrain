@@ -12,6 +12,20 @@ See [TIERS.md](TIERS.md) and [MOODS.md](MOODS.md).
 Memory stages: short-term · long-term · dream. Moods = tone in `motherbrain.md` only.
 After each mood/lesson write the agent is told to **re-read** `motherbrain.md` (no reboot).
 
+## Slice 1 — what runs today
+
+```bash
+pip install -e ".[mcp]" --no-deps && pip install "mcp>=1.9,<2" uvicorn starlette openai rank-bm25 json-repair
+motherbrain demo        # agent fails -> lesson -> a different agent doesn't fail (works offline)
+motherbrain mcp         # stdio MCP server
+motherbrain serve       # HTTP: /mcp + /api/* (dashboard)
+```
+
+- **One brain, many agents** — `mb_join` / `mb_members`; writes are attributed, recall is shared.
+- **Tools:** `mb_write` `mb_search` `mb_lesson` `mb_state` `mb_evolve` `mb_jev` `mb_reload` `mb_refusal` `mb_join` `mb_members`.
+- **Code:** `motherbrain/` (router, jev, store, brain, soul, mood, dream, refusal, mcp/server.py, api.py).
+- **Dashboard:** `dashboard/` (Next.js, Vercel) · **VPS deploy:** `deploy/vps/` · **Wrappers:** `plugins/motherbrain/`.
+
 > Fork of [Tencent-Hunyuan/Hy-Memory](https://github.com/Tencent-Hunyuan/Hy-Memory) (Apache-2.0).
 > Product: Motherbrain · Node0 Data Systems / JasonParser Security.
 

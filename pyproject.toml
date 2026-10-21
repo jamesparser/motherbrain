@@ -34,6 +34,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = ["mcp>=1.9,<2", "uvicorn", "starlette"]
 qdrant = ["qdrant-client", "fastembed"]
 faiss = ["faiss-cpu"]
 graph = ["neo4j"]
@@ -57,8 +58,11 @@ dev = [
     "ruff",
 ]
 
+[project.scripts]
+motherbrain = "motherbrain.cli:main"
+
 [tool.setuptools.packages.find]
-include = ["hy_memory*"]
+include = ["hy_memory*", "motherbrain*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
