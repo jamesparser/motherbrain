@@ -31,3 +31,19 @@ ssh vps 'bash -s' < deploy/vps/cloudflared-add-motherbrain.sh   # ingress rule o
 ```
 DNS: `motherbrain` CNAME → `<tunnel-id>.cfargotunnel.com` (proxied) in the realcryptocap.com zone.
 The Vercel dashboard reads the demo brain: `MB_API_URL=https://motherbrain.realcryptocap.com`, `MB_API_KEY` from `/opt/motherbrain/.env.demo`.
+
+## TEMPORARY: judge demo brain runs Pro on the paid ASI1 key  ⚠️ revert after judging
+
+Set 2026-10-21 for BGI judging. In `/opt/motherbrain/.env.demo` (marked `# TEMP-PRO`):
+`MB_TIER=pro`, `MB_STRONG_BASE_URL=https://api.asi1.ai/v1`, `MB_STRONG_MODEL=asi1`, `MB_STRONG_API_KEY=<ASI1_API_KEY from /opt/omega/.env>`.
+Short-term + JEV stay on Cudos `asi1-mini`; long-term + dream use `asi1`.
+
+Revert:
+```bash
+ssh vps "sed -i '/^# TEMP-PRO/d;/^MB_STRONG_/d;s/^MB_TIER=pro/MB_TIER=free/' /opt/motherbrain/.env.demo && systemctl restart motherbrain-demo"
+```
+(The fleet brain `motherbrain.service` was never changed: still Free / mini.)
+
+Stripe: test-mode Payment Link `STRIPE_PAYMENT_LINK` on Vercel (product "Motherbrain Pro", $5/agent/month).
+No Stripe secret is on Vercel yet, so a payment does not auto-flip a brain's tier; add
+`STRIPE_SECRET_KEY` + `STRIPE_PRICE_PRO` + `STRIPE_WEBHOOK_SECRET` for API checkout + webhook.

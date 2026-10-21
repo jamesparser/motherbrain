@@ -5,13 +5,21 @@ import { COOKIE, readSession } from "@/lib/session";
 export async function POST(req: NextRequest) {
   const key = process.env.STRIPE_SECRET_KEY;
   const price = process.env.STRIPE_PRICE_PRO;
-  if (!key || !price) {
-    return NextResponse.json({ error: "Stripe is not configured yet (set STRIPE_SECRET_KEY and STRIPE_PRICE_PRO)." }, { status: 503 });
-  }
+  const link = process.env.STRIPE_PAYMENT_LINK;
   const session = await readSession(req.cookies.get(COOKIE)?.value);
   const body = await req.json().catch(() => ({}));
   const agents = Math.max(1, Math.min(100, Number(body.agents) || 1));
   const brain = String(body.brain || "default").slice(0, 64);
+  if ((!key || !price) && link) {
+    // No secret key on this deployment: hand off to a Stripe Payment Link (quantity adjustable on Stripe's page).
+    const u = new URL(link);
+    u.searchParams.set("client_reference_id", brain.replace(/[^A-Za-z0-9_-]/g, "_"));
+    if (session?.email && !session.email.endsWith("@example.com")) u.searchParams.set("prefilled_email", session.email);
+    return NextResponse.json({ url: u.toString() });
+  }
+  if (!key || !price) {
+    return NextResponse.json({ error: "Stripe is not configured yet (set STRIPE_PAYMENT_LINK, or STRIPE_SECRET_KEY + STRIPE_PRICE_PRO)." }, { status: 503 });
+  }
   const site = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
   const params = new URLSearchParams({
     mode: "subscription",

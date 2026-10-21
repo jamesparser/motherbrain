@@ -20,5 +20,5 @@ export async function getSnapshot(): Promise<{ data: Snapshot; live: boolean; er
 }
 
 export function stripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PRO);
+  return Boolean((process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_PRO) || process.env.STRIPE_PAYMENT_LINK);
 }

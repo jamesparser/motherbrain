@@ -116,13 +116,10 @@ export default function Dashboard(props: {
             consolidation. {d.members.length} agents share <b>{d.brain.name}</b>, so when one learns, the fleet learns.
           </p>
           <div className="row">
-            {tier === "free" ? (
-              <button className="btn primary" onClick={upgrade} disabled={busy || !props.stripe} title={props.stripe ? "" : "Stripe not configured on this deployment"}>
-                {busy ? "Opening checkout…" : `Upgrade to Pro · $${5 * agents}/mo`}
-              </button>
-            ) : (
-              <span className="badge red">Pro active</span>
-            )}
+            <button className="btn primary" onClick={upgrade} disabled={busy || !props.stripe} title={props.stripe ? "" : "Stripe not configured on this deployment"}>
+              {busy ? "Opening checkout…" : `Get Pro · $${5 * agents}/mo`}
+            </button>
+            {tier !== "free" && <span className="badge red">this brain runs Pro</span>}
             <a className="btn" href="#connect">Connect an agent (MCP)</a>
           </div>
           {checkoutErr && <p className="muted" style={{ color: "#ff6b7a" }}>{checkoutErr}</p>}
@@ -275,7 +272,8 @@ export default function Dashboard(props: {
               <b>Pro</b>
               <div className="amt">$5<small> / agent / mo</small></div>
               <ul><li>Stronger brain for long-term writes and dreams</li><li>Hosted — keys stay server-side</li><li>Falls back to mini, never dead-ends</li></ul>
-              {tier === "pro" ? <span className="badge red">current</span> : (
+              {tier === "pro" && <span className="badge red">this demo brain runs Pro</span>}
+              {(
                 <div className="row">
                   <input aria-label="Agents" type="number" min={1} max={100} value={agents} onChange={(e) => setAgents(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
                     style={{ width: 64, padding: 8, borderRadius: 8, border: "1px solid var(--line)", background: "#0b0b10", color: "var(--text)" }} />
