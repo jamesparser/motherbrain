@@ -1,7 +1,7 @@
 # MOTHERBRAIN — build handover (for Claude / next agent)
 
 Date: 2026-09-25 · Owner: Casey Blanche / Node0 Data Systems / JasonParser Security
-Context: ASI1 / SingularityNET **BGI Omega hackathon 2** (after HyperSprint #2)
+Context: ASI1 / SingularityNET **BGI Omega hackathon**
 
 This is the full product spec. Do **not** invent jailbreak / refusal-bypass features.
 Do **not** resell or BYOK-resell ASI1 seats without asking SNET first.
