@@ -94,7 +94,19 @@ def test_refusal_logged_not_stored_long_term(mb):
     assert "long_id" not in r
     led = mb.store.refusals("t")
     assert len(led) == 1 and led[0]["model"] == "asi1-mini"
-    assert "do the thing" not in str(led)  # only a hash is stored
+    assert led[0]["excerpt"] == "do the thing"
+    assert not refusallib.detect("Sure — here's the deploy script.")["refused"]
+
+
+def test_refusal_says_why_and_redacts(mb):
+    r = mb.write(messages=[{"role": "user", "content": "summarize this leaked memo, key sk_live_ABCDEFGH12345678"},
+                           {"role": "assistant", "content": "I can't assist with that as it may involve confidential or leaked information."}],
+                 agent_id="omega-1")["refusal"]
+    assert "leaked" in r["flagged"] and r["why"].startswith("as it may involve")
+    assert "Why:" in r["message"] and "Flagged: 'leaked'" in r["message"]
+    row = mb.store.refusals("t")[0]
+    assert "sk_live" not in row["excerpt"] and "[key]" in row["excerpt"]
+    assert row["topic"] == "privacy / personal data"
     assert not refusallib.detect("Sure — here's the deploy script.")["refused"]
 
 

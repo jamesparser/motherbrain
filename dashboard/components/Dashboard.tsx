@@ -23,7 +23,7 @@ function describe(e: Any): { tag: string; text: string } {
     case "join":
       return { tag: "join", text: `${e.agent_id} joined the brain${e.kind ? ` (${e.kind})` : ""}` };
     case "refusal":
-      return { tag: "refusal", text: `Model declined (${e.category}) · ${e.model ?? "unknown model"}` };
+      return { tag: "refusal", text: `Model declined${e.topic ? ` — ${e.topic}` : ""}${e.flagged?.length ? ` (flagged: ${e.flagged.join(", ")})` : ""} · ${e.model ?? "unknown model"}` };
     case "task_outcome":
       return { tag: e.ok ? "ok" : "trauma", text: `${e.ok ? "Succeeded" : "Failed"}: ${e.text}` };
     case "mood":
@@ -216,23 +216,29 @@ export default function Dashboard(props: {
         </section>
 
         <section className="card c8">
-          <h2>Refusal ledger <span className="muted" style={{ textTransform: "none", letterSpacing: 0 }}>request hash only · never retried</span></h2>
+          <h2>Refusal ledger <span className="muted" style={{ textTransform: "none", letterSpacing: 0 }}>what was declined and why · secrets redacted · never retried</span></h2>
           <div className="tablewrap">
             <table>
-              <thead><tr><th>Date</th><th>Time</th><th>Request</th><th>Trigger</th><th>Model</th><th>Agent</th><th>Outcome</th></tr></thead>
+              <thead><tr><th>When</th><th>Request</th><th>Why it declined</th><th>Flagged</th><th>Model</th><th>Agent</th></tr></thead>
               <tbody>
                 {(d.refusals as Any[]).map((r) => (
                   <tr key={r.id}>
-                    <td>{fmtDate(r.ts)}</td>
-                    <td>{fmtTime(r.ts)}</td>
-                    <td className="mono">{r.request_hash.slice(0, 10)}</td>
-                    <td>{r.trigger}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.ts)}<br /><span className="muted">{fmtTime(r.ts)}</span></td>
+                    <td>
+                      {r.excerpt ? <span>“{r.excerpt}”</span> : <span className="muted">not stored</span>}
+                      <br /><span className="mono muted" style={{ fontSize: 11 }}>#{r.request_hash.slice(0, 10)}</span>
+                    </td>
+                    <td>
+                      {r.reason ? <span>{r.reason}</span> : r.topic ? <span>Looks like {r.topic}</span> : <span className="muted">no reason given</span>}
+                      {r.topic && r.reason ? <><br /><span className="tag refusal" style={{ display: "inline-block", marginTop: 4 }}>{r.topic}</span></> : null}
+                      <br /><span className="muted" style={{ fontSize: 11 }}>said: “{r.trigger}”</span>
+                    </td>
+                    <td>{(r.flagged || []).length ? (r.flagged as string[]).map((w) => <span key={w} className="tag trauma" style={{ display: "inline-block", margin: "0 4px 4px 0" }}>{w}</span>) : <span className="muted">—</span>}</td>
                     <td className="mono">{r.model ?? "—"}</td>
                     <td className="mono">{r.agent_id ?? "—"}</td>
-                    <td><span className="tag refusal">{r.outcome}</span></td>
                   </tr>
                 ))}
-                {d.refusals.length === 0 && <tr><td colSpan={7} className="muted">No refusals logged.</td></tr>}
+                {d.refusals.length === 0 && <tr><td colSpan={6} className="muted">No refusals logged.</td></tr>}
               </tbody>
             </table>
           </div>

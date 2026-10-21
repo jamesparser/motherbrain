@@ -81,6 +81,13 @@ class Store:
         if path != ":memory:":
             self.db.execute("PRAGMA journal_mode=WAL")
         self.db.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(refusals)").fetchall()}
+        for c in ("excerpt", "reason", "topic", "flagged"):
+            if c not in cols:
+                self.db.execute(f"ALTER TABLE refusals ADD COLUMN {c} TEXT")
 
     # ---- low level -------------------------------------------------------
     def x(self, sql: str, args: Iterable[Any] = ()) -> sqlite3.Cursor:
@@ -218,14 +225,18 @@ class Store:
     # ---- refusals ---------------------------------------------------------
     def add_refusal(self, **r: Any) -> str:
         rid = new_id()
-        self.x("INSERT INTO refusals(id,brain_id,agent_id,ts,request_hash,trigger,category,model,outcome)"
-               " VALUES(?,?,?,?,?,?,?,?,?)",
+        self.x("INSERT INTO refusals(id,brain_id,agent_id,ts,request_hash,trigger,category,model,outcome,"
+               "excerpt,reason,topic,flagged) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                [rid, r["brain_id"], r.get("agent_id"), time.time(), r["request_hash"], r.get("trigger"),
-                r.get("category"), r.get("model"), r.get("outcome", "declined")])
+                r.get("category"), r.get("model"), r.get("outcome", "declined"), r.get("excerpt"),
+                r.get("reason"), r.get("topic"), json.dumps(r.get("flagged") or [])])
         return rid
 
     def refusals(self, brain_id: str, limit: int = 200) -> List[Dict[str, Any]]:
-        return self.rows("SELECT * FROM refusals WHERE brain_id=? ORDER BY ts DESC LIMIT ?", [brain_id, limit])
+        out = self.rows("SELECT * FROM refusals WHERE brain_id=? ORDER BY ts DESC LIMIT ?", [brain_id, limit])
+        for r in out:
+            r["flagged"] = json.loads(r.get("flagged") or "[]")
+        return out
 
     # ---- events -----------------------------------------------------------
     def event(self, brain_id: str, type: str, agent_id: Optional[str] = None, **payload: Any) -> None:

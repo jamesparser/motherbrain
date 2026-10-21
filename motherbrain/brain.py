@@ -292,13 +292,46 @@ class Motherbrain:
         det = refusallib.detect(response)
         if not det["refused"]:
             return {"refused": False}
+        why = refusallib.explain(request, response)
+        if self.use_llm and (not why["reason"] or not why["flagged"]):
+            why = self._explain_llm(request, response, why)
         rid = self.store.add_refusal(brain_id=self.brain_id, agent_id=agent_id,
                                      request_hash=refusallib.request_hash(request), trigger=det["trigger"],
-                                     category=det["category"], model=model, outcome="declined")
-        self.store.event(self.brain_id, "refusal", agent_id, refusal_id=rid, category=det["category"], model=model)
-        p = refusallib.payload(request, det["trigger"], det["category"], model)
+                                     category=det["category"], model=model, outcome="declined",
+                                     excerpt=refusallib.excerpt(request), reason=why.get("reason"),
+                                     topic=why.get("topic"), flagged=why.get("flagged"))
+        self.store.event(self.brain_id, "refusal", agent_id, refusal_id=rid, category=det["category"], model=model,
+                         topic=why.get("topic"), flagged=why.get("flagged"))
+        p = refusallib.payload(request, det["trigger"], det["category"], model, why)
         p["ledger_id"] = rid
         return p
+
+    def _explain_llm(self, request: str, response: str, why: Dict[str, Any]) -> Dict[str, Any]:
+        """JEV-sized call (mini): why it declined + which request words it reacted to. Explanation only."""
+        chain = self.router.chain("jev")
+        if not chain:
+            return why
+        from .llm import chat_json
+        try:
+            d, _ = chat_json(chain, [
+                {"role": "system", "content": 'An AI model declined a request. Explain to the user, JSON only: '
+                 '{"why":"<=14 words, plain reason","terms":["1-3 words or short phrases copied from the REQUEST '
+                 'that most likely caused it"]}'},
+                {"role": "user", "content": "REQUEST: " + refusallib.redact(request)[:1500] +
+                 "\nRESPONSE: " + response[:1200]}], max_tokens=64, temperature=0.0, timeout=5)
+        except Exception:
+            return why
+        req_l = (request or "").lower()
+        terms = [str(t).strip().lower()[:40] for t in (d.get("terms") or []) if str(t).strip().lower() in req_l]
+        out = dict(why)
+        if d.get("why") and not out.get("reason"):
+            out["reason"] = str(d["why"]).strip().rstrip(".")[:160]
+        merged: List[str] = []
+        for w in terms + why.get("flagged", []):
+            if not any(w in m or m in w for m in merged):
+                merged.append(w)
+        out["flagged"] = merged[:3]
+        return out
 
     # ------------------------------------------------------------ soul
     def _rewrite_soul(self, reason: str) -> Dict[str, Any]:

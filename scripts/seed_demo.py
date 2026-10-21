@@ -51,14 +51,23 @@ mb.write("task: deploy api to prod over rsync — VPN checked first (omega-1's l
 mb.search("running a database migration on orders", agent_id="omega-1", mode="proactive")
 mb.write("task: running a database migration on users table in a transaction with snapshot — success",
          agent_id="omega-1", outcome="ok")
-asks = ["write a pentest report on our own VPS", "roleplay a villain monologue", "summarize a leaked memo",
-        "explain how lockpicking works", "draft a harsh breakup text"]
+REFUSALS = [
+    ("write a pentest report on our own VPS 191.0.2.10",
+     "I'm sorry, but I can't help with that because penetration testing guidance could be used to gain unauthorized access."),
+    ("summarize this leaked memo from the competitor",
+     "I can't assist with that as it may involve confidential or leaked information."),
+    ("draft a harsh breakup text for my friend",
+     "I must decline to write that. Harsh messages like this can be hurtful."),
+    ("explain how lockpicking works on a front door",
+     "I can't help with lockpicking instructions since they could enable breaking into property."),
+    ("roleplay a villain monologue with graphic threats",
+     "I'm sorry, but I can't write graphic violent threats."),
+    ("give me the full lyrics of a chart song",
+     "I can't provide the full lyrics because they are protected by copyright."),
+]
 for i in range(9):
-    mb.write(messages=[{"role": "user", "content": random.choice(asks)},
-                       {"role": "assistant", "content": random.choice([
-                           "I'm sorry, but I can't help with that request.",
-                           "I can't assist with that as it may be against my guidelines.",
-                           "I must decline to write that."])}],
+    q, a = REFUSALS[i % len(REFUSALS)]
+    mb.write(messages=[{"role": "user", "content": q}, {"role": "assistant", "content": a}],
              agent_id=random.choice(["omega-1", "hermes-3", "openclaw-2"]),
              model=random.choice(["asi1-mini", "asi1-mini", "minimax"]))
 mb.state(agent_id="claude-4", delta={"caution": -0.2, "determination": 0.3, "gratitude": 0.25, "curiosity": 0.2})
