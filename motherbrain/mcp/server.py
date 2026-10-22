@@ -37,7 +37,19 @@ def _agent(agent_id: Optional[str]) -> str:
 
 
 def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
-    mcp = FastMCP("motherbrain", instructions=INSTRUCTIONS, host=host, port=port)
+    security = None
+    extra = [h.strip() for h in os.environ.get("MB_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    if extra:
+        # Behind a reverse proxy / tunnel the Host header is the public name; keep DNS-rebinding
+        # protection on, but allow the names we actually serve.
+        from mcp.server.transport_security import TransportSecuritySettings
+
+        hosts = ["127.0.0.1:*", "localhost:*", "[::1]:*", f"{host}:*"] + extra + [f"{h}:*" for h in extra]
+        origins = ["http://127.0.0.1:*", "http://localhost:*"] + [f"https://{h}" for h in extra]
+        origins += [o.strip() for o in os.environ.get("MB_CORS_ORIGINS", "").split(",") if o.strip().startswith("http")]
+        security = TransportSecuritySettings(enable_dns_rebinding_protection=True, allowed_hosts=hosts,
+                                             allowed_origins=origins)
+    mcp = FastMCP("motherbrain", instructions=INSTRUCTIONS, host=host, port=port, transport_security=security)
 
     @mcp.tool()
     def mb_join(agent_id: str, kind: Optional[str] = None, role: Optional[str] = None) -> Dict[str, Any]:

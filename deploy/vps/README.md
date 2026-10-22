@@ -32,6 +32,12 @@ ssh vps 'bash -s' < deploy/vps/cloudflared-add-motherbrain.sh   # ingress rule o
 DNS: `motherbrain` CNAME → `<tunnel-id>.cfargotunnel.com` (proxied) in the realcryptocap.com zone.
 The Vercel dashboard reads the demo brain: `MB_API_URL=https://motherbrain.realcryptocap.com`, `MB_API_KEY` from `/opt/motherbrain/.env.demo`.
 
+## Public judge access (demo brain only)
+`/opt/motherbrain/.env.demo` also sets `MB_PUBLIC_KEY` (shown on the dashboard), `MB_PUBLIC_RPM=60`,
+`MB_DREAM_MIN_INTERVAL=600` and `MB_ALLOWED_HOSTS=motherbrain.realcryptocap.com` (MCP Host check behind the tunnel).
+Public key: rate-limited per IP and globally, 6 KB body cap, cannot change tier. The fleet brain has no public key.
+Nightly dreams: `deploy/vps/dream-timers.sh` (fleet 03:20 Phnom Penh, demo every 6 h).
+
 ## TEMPORARY: judge demo brain runs Pro on the paid ASI1 key  ⚠️ revert after judging
 
 Set 2026-10-21 for BGI judging. In `/opt/motherbrain/.env.demo` (marked `# TEMP-PRO`):
