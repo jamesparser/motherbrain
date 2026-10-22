@@ -16,5 +16,5 @@ export async function middleware(req: NextRequest) {
 
 // Everything except login, the Stripe webhook, and static assets needs a session.
 export const config = {
-  matcher: ["/((?!login|api/login|api/stripe/webhook|_next/|favicon|motherbrain.png).*)"],
+  matcher: ["/((?!login|api/login|api/auth/|api/owner/ingest|api/stripe/webhook|_next/|favicon|motherbrain.png).*)"],
 };

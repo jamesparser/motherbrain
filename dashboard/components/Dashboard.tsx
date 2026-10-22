@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import TryIt from "./TryIt";
+import Thoughts from "./Thoughts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Any = Record<string, any>;
@@ -45,10 +46,12 @@ const FILTERS: Record<string, (e: Any) => boolean> = {
 
 export default function Dashboard(props: {
   initial: Any; live: boolean; error?: string; email: string; stripe: boolean; flash?: "upgraded" | "canceled";
-  mcpUrl?: string; publicKey?: string;
+  mcpUrl?: string; publicKey?: string; owner?: boolean; verified?: boolean; ageSec?: number;
 }) {
   const [d, setD] = useState<Any>(props.initial);
   const [live, setLive] = useState(props.live);
+  const [owner, setOwner] = useState(Boolean(props.owner));
+  const [age, setAge] = useState<number | undefined>(props.ageSec);
   const [filter, setFilter] = useState("all");
   const [agents, setAgents] = useState(Math.max(1, props.initial.members?.length || 1));
   const [busy, setBusy] = useState(false);
@@ -61,15 +64,17 @@ export default function Dashboard(props: {
         const j = await r.json();
         setD(j.data);
         setLive(j.live);
+        setOwner(Boolean(j.owner));
+        setAge(j.ageSec);
       }
     } catch {}
   }, []);
 
   useEffect(() => {
-    if (!props.live) return;
-    const t = setInterval(refresh, 10_000);
+    if (!props.live && !props.owner) return;
+    const t = setInterval(refresh, props.owner ? 5_000 : 10_000);
     return () => clearInterval(t);
-  }, [props.live, refresh]);
+  }, [props.live, props.owner, refresh]);
 
   const tl = useMemo(() => (d.timeline as Any[]).filter(FILTERS[filter]), [d, filter]);
   const ba = (d.before_after as Any[]).filter((b) => b.fails_before > 0 || b.applied > 0).slice(0, 4);
@@ -99,10 +104,11 @@ export default function Dashboard(props: {
           <img src="/motherbrain.png" alt="" />
           Motherbrain
           <span className={`badge ${tier === "free" ? "" : "red"}`}>{tier}</span>
-          <span className={`badge ${live ? "green" : ""}`}>{live ? "live" : "demo data"}</span>
+          <span className={`badge ${live ? "green" : ""}`}>{live ? "live" : owner ? "sync paused" : "demo data"}</span>
+          <span className={`badge ${owner ? "red" : ""}`}>{owner ? "your fleet brain" : "public demo brain"}</span>
         </div>
         <form method="post" action="/api/logout" className="row">
-          <span className="muted" style={{ fontSize: 12 }}>{props.email}</span>
+          <span className="muted" style={{ fontSize: 12 }}>{props.email}{props.verified ? " ✓" : ""}</span>
           <button className="btn ghost">Log out</button>
         </form>
       </header>
@@ -124,7 +130,7 @@ export default function Dashboard(props: {
               {busy ? "Opening checkout…" : `Get Pro · $${5 * agents}/mo`}
             </button>
             {tier !== "free" && <span className="badge red">this brain runs Pro</span>}
-            {live && <a className="btn" href="#try">Try it as an agent</a>}
+            {owner ? <a className="btn" href="#thoughts">What is my AI thinking?</a> : live && <a className="btn" href="#try">Try it as an agent</a>}
             <a className="btn" href="#connect">Connect your agent (MCP)</a>
           </div>
           {checkoutErr && <p className="muted" style={{ color: "#ff6b7a" }}>{checkoutErr}</p>}
@@ -165,7 +171,8 @@ export default function Dashboard(props: {
       )}
 
       <div className="grid">
-        {live && <TryIt onDone={refresh} />}
+        {owner && <Thoughts items={(d.thoughts as Any[]) || []} ageSec={age} />}
+        {live && !owner && <TryIt onDone={refresh} />}
 
         <section className="card c7">
           <h2>Live mood <span className="muted" style={{ textTransform: "none", letterSpacing: 0 }}>tone only · never blocks tools</span></h2>

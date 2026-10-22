@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE, createSession } from "@/lib/session";
+import { COOKIE, COOKIE_OPTS, createSession } from "@/lib/session";
 
+// Demo login (judges): any email, unverified → always the public demo brain, never an owner brain.
 export async function POST(req: NextRequest) {
   const form = await req.formData();
   const email = String(form.get("email") || "").trim().toLowerCase();
@@ -10,8 +11,6 @@ export async function POST(req: NextRequest) {
   if (!email || !email.includes("@")) return back("email");
   if (required && password !== required) return back("password");
   const res = NextResponse.redirect(new URL("/", req.url), 303);
-  res.cookies.set(COOKIE, await createSession(email, !required), {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 7 * 86400,
-  });
+  res.cookies.set(COOKIE, await createSession(email, true, "demo"), COOKIE_OPTS);
   return res;
 }

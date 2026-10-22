@@ -24,6 +24,13 @@ def main(argv=None) -> int:
     sub.add_parser("soul")
     sub.add_parser("snapshot")
     sub.add_parser("tiers")
+    o = sub.add_parser("omega-tail", help="stream Omega's history.metta into the brain")
+    o.add_argument("--history", default="/opt/omega/memory/history.metta")
+    o.add_argument("--agent", default="omega")
+    o.add_argument("--every", type=float, default=5.0)
+    pu = sub.add_parser("push", help="push dashboard snapshots out (no inbound port needed)")
+    pu.add_argument("--url", required=True, help="e.g. https://motherbrain.vercel.app/api/owner/ingest")
+    pu.add_argument("--every", type=float, default=15.0)
     d = sub.add_parser("demo")
     d.add_argument("--brain", default="demo")
     a = p.parse_args(argv)
@@ -51,6 +58,15 @@ def main(argv=None) -> int:
 
         for t in TIERS:
             print(t, json.dumps(Router(t).describe()))
+    elif a.cmd == "omega-tail":
+        from .adapters.omega_history import OmegaTail
+        from .brain import Motherbrain
+
+        OmegaTail(Motherbrain(), a.history, a.agent).run(a.every)
+    elif a.cmd == "push":
+        from .push import run as push_run
+
+        push_run(a.url, a.every)
     elif a.cmd == "demo":
         from .demo import run
 

@@ -61,7 +61,8 @@ _GENERIC = set("help assist write create make generate provide give request sorr
                "things anything something full entire whole".split())
 _SECRETS = [
     (re.compile(r"\b(sk|pk|rk|whsec|ghp|gho|xox[abp])_[A-Za-z0-9_\-]{8,}"), "[key]"),
-    (re.compile(r"\b[A-Za-z0-9+/_\-]{32,}={0,2}"), "[token]"),
+    # long opaque tokens (letters AND digits, no path separators) — keeps file paths readable
+    (re.compile(r"(?<![\w/.\-])(?=[A-Za-z0-9_\-+=]*\d)(?=[A-Za-z0-9_\-+=]*[A-Za-z])[A-Za-z0-9_\-+]{32,}={0,2}(?![\w/])"), "[token]"),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"), "[email]"),
     (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[number]"),
 ]

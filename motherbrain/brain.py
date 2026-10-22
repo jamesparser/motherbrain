@@ -401,5 +401,7 @@ class Motherbrain:
             "refusals": refusals,
             "refusals_by_day": [{"day": k, "count": v} for k, v in sorted(by_day.items())],
             "before_after": self.before_after(),
+            "thoughts": [{"ts": e["ts"], "agent_id": e["agent_id"], **e["payload"]}
+                         for e in self.store.events(self.brain_id, limit=60, types=["thought"])],
             "cta": {"venice": refusallib.VENICE_URL},
         }

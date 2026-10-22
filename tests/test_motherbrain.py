@@ -173,3 +173,25 @@ def test_dream_min_interval(mb, monkeypatch):
     mb.evolve(agent_id="omega-1")
     monkeypatch.setenv("MB_DREAM_MIN_INTERVAL", "600")
     assert mb.evolve(agent_id="omega-1")["skipped"] is True
+
+
+def test_omega_history_tail(mb, tmp_path):
+    from motherbrain.adapters.omega_history import OmegaTail, parse
+
+    h = tmp_path / "history.metta"
+    h.write_text('("2026-10-22 01:00:00" (shell "ls"))\n')
+    t = OmegaTail(mb, str(h), "omega")
+    assert t.step() == 0  # first run starts at the end
+    with h.open("a") as f:
+        f.write('("2026-10-22 01:00:05" (nop))\n')
+        f.write('("2026-10-22 01:00:06" (pin "TransitStation reviewed: effects-before-interactions holds, key sk_live_ABCDEFGH12345678"))\n')
+        f.write('("2026-10-22 01:00:07" HUMAN_MESSAGE: [9100001] [] hello from jason-parser)\n')
+        f.write('("2026-10-22 01:00:08" (send "On it.\n Reviewing now"))\n')
+    assert t.step() == 3
+    th = mb.store.events("t", types=["thought"])
+    kinds = [e["payload"]["kind"] for e in th]
+    assert set(kinds) == {"pin", "message_in", "send"}
+    assert all("sk_live" not in e["payload"]["text"] for e in th)
+    assert any("TransitStation" in m["text"] for m in mb.store.memories("t", stages=["long"]))
+    assert mb.snapshot()["thoughts"]
+    assert list(parse('("2026-10-22 01:00:09" (shell "echo \\"hi\\""))'))[0][1] == "shell"
