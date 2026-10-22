@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import TryIt from "./TryIt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Any = Record<string, any>;
@@ -44,6 +45,7 @@ const FILTERS: Record<string, (e: Any) => boolean> = {
 
 export default function Dashboard(props: {
   initial: Any; live: boolean; error?: string; email: string; stripe: boolean; flash?: "upgraded" | "canceled";
+  mcpUrl?: string; publicKey?: string;
 }) {
   const [d, setD] = useState<Any>(props.initial);
   const [live, setLive] = useState(props.live);
@@ -52,20 +54,22 @@ export default function Dashboard(props: {
   const [busy, setBusy] = useState(false);
   const [checkoutErr, setCheckoutErr] = useState<string | null>(null);
 
+  const refresh = useCallback(async () => {
+    try {
+      const r = await fetch("/api/brain", { cache: "no-store" });
+      if (r.ok) {
+        const j = await r.json();
+        setD(j.data);
+        setLive(j.live);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (!props.live) return;
-    const t = setInterval(async () => {
-      try {
-        const r = await fetch("/api/brain", { cache: "no-store" });
-        if (r.ok) {
-          const j = await r.json();
-          setD(j.data);
-          setLive(j.live);
-        }
-      } catch {}
-    }, 10_000);
+    const t = setInterval(refresh, 10_000);
     return () => clearInterval(t);
-  }, [props.live]);
+  }, [props.live, refresh]);
 
   const tl = useMemo(() => (d.timeline as Any[]).filter(FILTERS[filter]), [d, filter]);
   const ba = (d.before_after as Any[]).filter((b) => b.fails_before > 0 || b.applied > 0).slice(0, 4);
@@ -120,7 +124,8 @@ export default function Dashboard(props: {
               {busy ? "Opening checkout…" : `Get Pro · $${5 * agents}/mo`}
             </button>
             {tier !== "free" && <span className="badge red">this brain runs Pro</span>}
-            <a className="btn" href="#connect">Connect an agent (MCP)</a>
+            {live && <a className="btn" href="#try">Try it as an agent</a>}
+            <a className="btn" href="#connect">Connect your agent (MCP)</a>
           </div>
           {checkoutErr && <p className="muted" style={{ color: "#ff6b7a" }}>{checkoutErr}</p>}
           <div className="stats">
@@ -160,6 +165,8 @@ export default function Dashboard(props: {
       )}
 
       <div className="grid">
+        {live && <TryIt onDone={refresh} />}
+
         <section className="card c7">
           <h2>Live mood <span className="muted" style={{ textTransform: "none", letterSpacing: 0 }}>tone only · never blocks tools</span></h2>
           <div className="bias">{d.mood.mood_bias}<small>brain-wide</small></div>
@@ -300,17 +307,37 @@ export default function Dashboard(props: {
         <section className="card c12" id="connect">
           <h2>Connect an agent</h2>
           <p className="muted" style={{ marginTop: 0 }}>Every agent that connects joins the same brain. Call <code>mb_join</code> once, then <code>mb_search</code> before planning.</p>
-          <pre className="soul">{`{
+          {props.mcpUrl && props.publicKey ? (
+            <>
+              <p style={{ margin: "0 0 8px" }}><b>Plug your own agent into this demo brain</b> (public, rate-limited key):</p>
+              <pre className="soul">{`# Claude Code
+claude mcp add --transport http motherbrain ${props.mcpUrl} --header "Authorization: Bearer ${props.publicKey}"
+
+# Any MCP client (Claude Desktop, OpenClaw, Hermes, Cursor…)
+{
+  "mcpServers": {
+    "motherbrain": {
+      "type": "http",
+      "url": "${props.mcpUrl}",
+      "headers": { "Authorization": "Bearer ${props.publicKey}" }
+    }
+  }
+}`}</pre>
+              <p className="muted" style={{ fontSize: 12 }}>Then ask your agent: “join motherbrain as my-agent, then check what the fleet learned about deploying to prod”.</p>
+            </>
+          ) : null}
+          <p style={{ margin: "12px 0 8px" }}><b>Self-host</b> (your own brain, stdio):</p>
+          <pre className="soul">{`pip install "motherbrain[mcp]"   # from github.com/jamesparser/motherbrain
+{
   "mcpServers": {
     "motherbrain": {
       "command": "motherbrain",
       "args": ["mcp"],
-      "env": { "MB_BRAIN": "${d.brain.id}", "MB_AGENT_ID": "my-agent", "MB_CUDOS_API_KEY": "…" }
+      "env": { "MB_BRAIN": "my-fleet", "MB_AGENT_ID": "my-agent", "MB_CUDOS_API_KEY": "…" }
     }
   }
-}
-
-# or over HTTP (VPS):  https://<your-vps>/mcp   ·  Authorization: Bearer <MB_API_KEY>`}</pre>
+}`}</pre>
+          <p className="muted" style={{ fontSize: 12 }}>Omega agents: native plugin with live soul prompt-extension — see <code>plugins/motherbrain/omega</code>.</p>
         </section>
       </div>
 

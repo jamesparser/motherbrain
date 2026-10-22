@@ -19,6 +19,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ u
       email={session?.email ?? ""}
       stripe={stripeConfigured()}
       flash={sp.upgraded ? "upgraded" : sp.canceled ? "canceled" : undefined}
+      mcpUrl={live && process.env.MB_API_URL ? `${process.env.MB_API_URL.replace(/\/$/, "")}/mcp` : undefined}
+      publicKey={live ? process.env.MB_PUBLIC_KEY : undefined}
     />
   );
 }

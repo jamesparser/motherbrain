@@ -254,6 +254,13 @@ class Motherbrain:
 
     # ------------------------------------------------------------ dream
     def evolve(self, *, agent_id: Optional[str] = None) -> Dict[str, Any]:
+        min_gap = float(os.environ.get("MB_DREAM_MIN_INTERVAL", "0") or 0)
+        if min_gap:
+            last = self.store.events(self.brain_id, limit=1, types=["dream"])
+            if last and time.time() - last[0]["ts"] < min_gap:
+                wait = int(min_gap - (time.time() - last[0]["ts"]))
+                return {"skipped": True, "reason": f"dreamed recently; next dream allowed in ~{wait // 60 + 1} min",
+                        "last_dream": last[0]["payload"].get("summary"), "tier": self.tier}
         short = self.store.memories(self.brain_id, stages=["short"], include_expired=True, undreamed=True, limit=400)
         long = self.store.memories(self.brain_id, stages=["long"], limit=400)
         lessons = self.store.lessons(self.brain_id)

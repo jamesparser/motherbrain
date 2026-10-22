@@ -12,6 +12,8 @@ See [TIERS.md](TIERS.md) and [MOODS.md](MOODS.md).
 Memory stages: short-term · long-term · dream. Moods = tone in `motherbrain.md` only.
 After each mood/lesson write the agent is told to **re-read** `motherbrain.md` (no reboot).
 
+**Judges:** live dashboard https://motherbrain.vercel.app (any email) · see [SUBMISSION.md](SUBMISSION.md).
+
 ## Slice 1 — what runs today
 
 ```bash
@@ -24,7 +26,7 @@ motherbrain serve       # HTTP: /mcp + /api/* (dashboard)
 - **One brain, many agents** — `mb_join` / `mb_members`; writes are attributed, recall is shared.
 - **Tools:** `mb_write` `mb_search` `mb_lesson` `mb_state` `mb_evolve` `mb_jev` `mb_reload` `mb_refusal` `mb_join` `mb_members`.
 - **Code:** `motherbrain/` (router, jev, store, brain, soul, mood, dream, refusal, mcp/server.py, api.py).
-- **Dashboard:** `dashboard/` (Next.js, Vercel) · **VPS deploy:** `deploy/vps/` · **Wrappers:** `plugins/motherbrain/`.
+- **Dashboard:** `dashboard/` (Next.js, Vercel) · **VPS deploy:** `deploy/vps/` · **Wrappers:** `plugins/motherbrain/` (native Omega plugin, Hermes skill, MCP configs).
 
 > Fork of [Tencent-Hunyuan/Hy-Memory](https://github.com/Tencent-Hunyuan/Hy-Memory) (Apache-2.0).
 > Product: Motherbrain · Node0 Data Systems / JasonParser Security.

@@ -140,3 +140,36 @@ def test_dream_and_before_after(mb):
     assert ba["applied"] >= 1
     snap = mb.snapshot()
     assert snap["counts"]["dream"] == 1 and snap["cta"]["venice"].endswith("ref=9wgrvZ")
+
+
+def test_http_tools_and_public_key_limits(tmp_path, monkeypatch):
+    from starlette.testclient import TestClient
+    import motherbrain.mcp.server as srv
+    import motherbrain.api as api
+
+    monkeypatch.setenv("MB_HOME", str(tmp_path))
+    monkeypatch.setenv("MB_API_KEY", "full")
+    monkeypatch.setenv("MB_PUBLIC_KEY", "pub")
+    monkeypatch.setenv("MB_PUBLIC_RPM", "3")
+    monkeypatch.setenv("MB_OFFLINE", "1")
+    monkeypatch.setattr(srv, "_brain", Motherbrain("h", db_path=str(tmp_path / "h.db"),
+                                                   soul_path=str(tmp_path / "s.md"), use_llm=False))
+    monkeypatch.setattr(api, "LIMITS", api.RateLimit())
+    c = TestClient(api.create_app())
+    full = {"Authorization": "Bearer full"}
+    pub = {"Authorization": "Bearer pub"}
+    assert c.post("/api/tools/search", json={"query": "x"}).status_code == 401
+    assert c.post("/api/tools/write", json={"text": "Staging DB is on port 5433", "agent_id": "a"}, headers=full).json()["label"] == "fact"
+    r = c.post("/api/tools/search", json={"query": "staging db port", "agent_id": "b"}, headers=pub).json()
+    assert r["memories"][0]["agent_id"] == "a"
+    assert c.post("/api/tier", json={"tier": "pro"}, headers=pub).status_code == 403
+    assert c.post("/api/tools/nope", json={}, headers=full).status_code == 404
+    codes = [c.post("/api/tools/members", json={}, headers=pub).status_code for _ in range(4)]
+    assert 429 in codes
+    assert c.post("/api/tools/reload", json={}, headers=full).json()["hash"]
+
+
+def test_dream_min_interval(mb, monkeypatch):
+    mb.evolve(agent_id="omega-1")
+    monkeypatch.setenv("MB_DREAM_MIN_INTERVAL", "600")
+    assert mb.evolve(agent_id="omega-1")["skipped"] is True
