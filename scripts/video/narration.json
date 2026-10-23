@@ -1,0 +1,42 @@
+[
+ [
+  "hero",
+  "This is Motherbrain: a persistent memory for Omega agents. Many agents attach to one brain, so when one agent learns, the whole fleet learns."
+ ],
+ [
+  "stages",
+  "Memory works in stages, like a human brain. Short-term runs on the fast mini model. Long-term memory and dreams run on ASI one."
+ ],
+ [
+  "scout",
+  "Everything from here is live. Two real agents connect over MCP. Omega scout asks the brain first and finds nothing. It plans with ASI one and calls a real export tool, which fails on a data policy it couldn't have known about. So it writes a hard lesson for the fleet."
+ ],
+ [
+  "soul",
+  "That lesson rewrites the shared soul file instantly, and every agent is told to re-read it. No reboot."
+ ],
+ [
+  "ops",
+  "Now Hermes ops gets a similar job. It never saw the failure, but the brain hands it the lesson before it plans, and it succeeds on the first try."
+ ],
+ [
+  "before_after",
+  "Failed once. Lesson written. Didn't fail again."
+ ],
+ [
+  "dream",
+  "Then the brain dreams. The stronger model consolidates what the fleet learned today, live, in seconds."
+ ],
+ [
+  "refusal",
+  "When a model refuses, Motherbrain says what was declined and why, logs it, and never tries to force it."
+ ],
+ [
+  "plans",
+  "Free on the mini brain. Pro is five dollars per agent."
+ ],
+ [
+  "connect",
+  "There's a native Omega plugin, and any agent can join over MCP. Try it at motherbrain dot vercel dot app."
+ ]
+]

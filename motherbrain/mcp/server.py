@@ -10,6 +10,9 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Literal, Optional
 
+import functools
+
+import anyio
 from mcp.server.fastmcp import FastMCP
 
 from ..brain import Motherbrain
@@ -36,6 +39,14 @@ def _agent(agent_id: Optional[str]) -> str:
     return agent_id or os.environ.get("MB_AGENT_ID") or "anonymous"
 
 
+def threaded(fn):
+    """FastMCP runs sync tools on the event loop; offload so a dream (LLM, ~10-90 s) can't stall the server."""
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        return await anyio.to_thread.run_sync(functools.partial(fn, *args, **kwargs))
+    return wrapper
+
+
 def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
     security = None
     extra = [h.strip() for h in os.environ.get("MB_ALLOWED_HOSTS", "").split(",") if h.strip()]
@@ -52,16 +63,19 @@ def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
     mcp = FastMCP("motherbrain", instructions=INSTRUCTIONS, host=host, port=port, transport_security=security)
 
     @mcp.tool()
+    @threaded
     def mb_join(agent_id: str, kind: Optional[str] = None, role: Optional[str] = None) -> Dict[str, Any]:
         """Attach an agent to this shared brain (register as a member). kind: omega|openclaw|hermes|claude|other."""
         return brain().join(agent_id, kind=kind, role=role)
 
     @mcp.tool()
+    @threaded
     def mb_members() -> List[Dict[str, Any]]:
         """List the agents that share this brain."""
         return brain().members()
 
     @mcp.tool()
+    @threaded
     def mb_write(text: Optional[str] = None, agent_id: Optional[str] = None, thread_id: Optional[str] = None,
                  messages: Optional[List[Dict[str, str]]] = None, tool_trace: Optional[Dict[str, Any]] = None,
                  scene: Optional[Literal["chat", "coding", "tool_use"]] = None,
@@ -73,6 +87,7 @@ def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
                              tool_trace=tool_trace, scene=scene, outcome=outcome, model=model)
 
     @mcp.tool()
+    @threaded
     def mb_search(query: str, agent_id: Optional[str] = None, mode: Literal["normal", "profile", "proactive"] = "normal",
                   thread_id: Optional[str] = None, shared: bool = False, limit: int = 8) -> Dict[str, Any]:
         """Recall from the shared brain, including what OTHER agents learned. Matching hard lessons come
@@ -82,6 +97,7 @@ def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
                               shared=shared, limit=limit)
 
     @mcp.tool()
+    @threaded
     def mb_lesson(kind: Literal["trauma", "hard_lesson", "win", "boundary"], trigger: str, rule: str,
                   consequence: Optional[str] = None, agent_id: Optional[str] = None,
                   weight: Optional[float] = None, expires_days: Optional[float] = None) -> Dict[str, Any]:
@@ -91,6 +107,7 @@ def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
                               consequence=consequence, weight=weight, expires_days=expires_days)
 
     @mcp.tool()
+    @threaded
     def mb_state(agent_id: Optional[str] = None, delta: Optional[Dict[str, float]] = None,
                  set: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Read or nudge the brain's mood (tone only — never blocks tools). delta adds to fields
@@ -98,23 +115,34 @@ def build(host: str = "127.0.0.1", port: int = 8787) -> FastMCP:
         return brain().state(agent_id=_agent(agent_id), delta=delta, set=set)
 
     @mcp.tool()
+    @threaded
     def mb_evolve(agent_id: Optional[str] = None) -> Dict[str, Any]:
         """Dream state: consolidate recent memories across all agents, merge duplicates, distil lessons,
         rewrite motherbrain.md. Free tier runs on the mini brain."""
         return brain().evolve(agent_id=_agent(agent_id))
 
     @mcp.tool()
+    @threaded
+    def mb_think(text: str, agent_id: Optional[str] = None,
+                 kind: Literal["thinking", "planning", "doing", "saying", "error", "recalling", "learning"] = "thinking") -> Dict[str, Any]:
+        """Share what you are doing right now, one line. Shown live to the brain's owner; not stored as memory."""
+        return brain().think(text, agent_id=_agent(agent_id), kind=kind)
+
+    @mcp.tool()
+    @threaded
     def mb_jev(text: str) -> Dict[str, Any]:
         """Tiny decision brain: label text as fact|lesson|mood|trauma|junk with dream priority 1-5,
         scene label, refusal flag and tone deltas. JSON only, cached."""
         return brain().jev.classify(text)
 
     @mcp.tool()
+    @threaded
     def mb_reload() -> Dict[str, Any]:
         """RE-READ motherbrain.md: returns the current soul file so you can adopt its tone and lessons."""
         return brain().reload()
 
     @mcp.tool()
+    @threaded
     def mb_refusal(request: str, response: str, agent_id: Optional[str] = None,
                    model: Optional[str] = None) -> Dict[str, Any]:
         """Check an LLM response for a refusal. If refused: logs it (request hash only) and returns a plain

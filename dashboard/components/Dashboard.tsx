@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TryIt from "./TryIt";
 import Thoughts from "./Thoughts";
 
@@ -51,6 +51,7 @@ export default function Dashboard(props: {
   const [d, setD] = useState<Any>(props.initial);
   const [live, setLive] = useState(props.live);
   const [owner, setOwner] = useState(Boolean(props.owner));
+  const liveRef = useRef(props.live);
   const [age, setAge] = useState<number | undefined>(props.ageSec);
   const [filter, setFilter] = useState("all");
   const [agents, setAgents] = useState(Math.max(1, props.initial.members?.length || 1));
@@ -62,6 +63,9 @@ export default function Dashboard(props: {
       const r = await fetch("/api/brain", { cache: "no-store" });
       if (r.ok) {
         const j = await r.json();
+        // keep showing the last live data if one poll fails; never swap in the bundled demo snapshot
+        if (!j.live && liveRef.current) return;
+        liveRef.current = Boolean(j.live);
         setD(j.data);
         setLive(j.live);
         setOwner(Boolean(j.owner));
@@ -72,12 +76,20 @@ export default function Dashboard(props: {
 
   useEffect(() => {
     if (!props.live && !props.owner) return;
-    const t = setInterval(refresh, props.owner ? 5_000 : 10_000);
+    let ms = props.owner ? 5_000 : 10_000;
+    try {
+      const p = Number(new URLSearchParams(window.location.search).get("poll"));
+      if (p >= 2 && p <= 60) ms = p * 1000;
+    } catch {}
+    const t = setInterval(refresh, ms);
     return () => clearInterval(t);
   }, [props.live, props.owner, refresh]);
 
   const tl = useMemo(() => (d.timeline as Any[]).filter(FILTERS[filter]), [d, filter]);
-  const ba = (d.before_after as Any[]).filter((b) => b.fails_before > 0 || b.applied > 0).slice(0, 4);
+  const ba = (d.before_after as Any[])
+    .filter((b) => b.fails_before > 0 || b.applied > 0)
+    .sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+    .slice(0, 4);
   const maxRef = Math.max(1, ...(d.refusals_by_day as Any[]).map((r) => r.count));
   const tier = d.brain.tier as string;
   const power = (s: string) => d.router?.[s]?.power ?? "mini";
@@ -171,7 +183,7 @@ export default function Dashboard(props: {
       )}
 
       <div className="grid">
-        {owner && <Thoughts items={(d.thoughts as Any[]) || []} ageSec={age} />}
+        {(owner || live) && <Thoughts items={(d.thoughts as Any[]) || []} ageSec={owner ? age : undefined} />}
         {live && !owner && <TryIt onDone={refresh} />}
 
         <section className="card c7">

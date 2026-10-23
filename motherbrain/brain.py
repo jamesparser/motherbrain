@@ -22,7 +22,7 @@ LESSON_KINDS = ("trauma", "hard_lesson", "win", "boundary")
 LESSON_WEIGHT = {"trauma": 1.0, "hard_lesson": 0.9, "boundary": 0.7, "win": 0.6}
 LONG_LABELS = ("fact", "lesson", "trauma")
 TRIGGER_MATCH = 0.34
-TOOLS = ["mb_write", "mb_search", "mb_lesson", "mb_state", "mb_evolve", "mb_jev", "mb_reload",
+TOOLS = ["mb_think", "mb_write", "mb_search", "mb_lesson", "mb_state", "mb_evolve", "mb_jev", "mb_reload",
          "mb_refusal", "mb_join", "mb_members"]
 
 
@@ -151,6 +151,20 @@ class Motherbrain:
             return text.strip().strip('"') or body
         except NoLLM:
             return body
+
+    # ------------------------------------------------------------ thoughts
+    def think(self, text: str, *, agent_id: str, kind: str = "thinking") -> Dict[str, Any]:
+        """Stream what an agent is doing right now (owner's live view). Not a memory; never recalled."""
+        from .refusal import redact
+
+        text = redact(" ".join((text or "").split()))[:400]
+        if not text:
+            raise ValueError("text is required")
+        kind = kind if kind in ("thinking", "doing", "saying", "error", "planning", "recalling", "learning") else "thinking"
+        self.store.touch_member(self.brain_id, agent_id)
+        self.store.event(self.brain_id, "thought", agent_id, kind=kind, text=text,
+                         at=time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
+        return {"ok": True}
 
     # ------------------------------------------------------------ search
     def search(self, query: str, *, agent_id: str, thread_id: Optional[str] = None, mode: str = "normal",

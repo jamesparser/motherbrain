@@ -85,7 +85,9 @@ async def health(_: Request):
 
 
 async def snapshot(_: Request):
-    return JSONResponse(brain().snapshot())
+    import anyio
+
+    return JSONResponse(await anyio.to_thread.run_sync(brain().snapshot))
 
 
 async def refusals(_: Request):
@@ -111,6 +113,7 @@ async def set_tier(request: Request):
 TOOLS = {
     "join": lambda b, a: b.join(a["agent_id"], kind=a.get("kind"), role=a.get("role")),
     "members": lambda b, a: b.members(),
+    "think": lambda b, a: b.think(a.get("text", ""), agent_id=a.get("agent_id") or "anonymous", kind=a.get("kind", "thinking")),
     "write": lambda b, a: b.write(a.get("text"), agent_id=a.get("agent_id") or "anonymous", thread_id=a.get("thread_id"),
                                   messages=a.get("messages"), tool_trace=a.get("tool_trace"), scene=a.get("scene"),
                                   outcome=a.get("outcome"), model=a.get("model")),
@@ -136,7 +139,9 @@ async def tool(request: Request):
     except Exception:
         args = {}
     try:
-        return JSONResponse(fn(brain(), args or {}))
+        import anyio
+
+        return JSONResponse(await anyio.to_thread.run_sync(lambda: fn(brain(), args or {})))
     except (KeyError, ValueError, TypeError) as e:
         return JSONResponse({"error": str(e)}, status_code=400)
 
